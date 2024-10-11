@@ -1,6 +1,8 @@
-#pragma once
+#ifndef VECTOR_HPP_
+#define VECTOR_HPP_
 
 #include <cstddef>
+#include <iterator>
 
 template<typename T>
 class Vector {
@@ -9,36 +11,56 @@ private:
     size_t sz_;
     size_t cap_;
 
-public:
-    class const_iterator {
-    private:
-        const T* ptr;
-        iterator(T* ptr): ptr(ptr) {}
+    template <bool IsConst>
+    class base_iterator {
     public:
-        // other methods
-        const T& operator*() const {
-            return *ptr;
-        }
-        const T* operator->() const {
-            return ptr;
-        }
-    };
-
-    class iterator {
+        using value_type = T;
+        using pointer_type = std::conditional<IsConst, const T*, T*>::type;
+        using reference_type = std::conditional<IsConst, const T&, T&>::type;
+        using iterator_category = std::contiguous_iterator_tag;
     private:
-        T* ptr;
+        pointer_type * ptr;
         iterator(T *ptr): ptr(ptr) {}
     public:
-        // other methods
+        // req: CopyConstructable
+        iterator(const base_iterator& it) = default;
 
-        T& operator*() const {
+        // req: CopyAssignable
+        iterator& operator=(const iterator& it) = default;
+
+        // req: dereferenceable
+        reference_type & operator*() const {
             return *ptr;
         }
 
-        T* operator->() const {
+        pointer_type* operator->() const {
             return ptr;
         }
+
+        base_iterator& operator++() {
+            ptr++;
+            return *this;
+        }
+        base_iterator operator++(int) {
+            base_iterator copy = *this;
+            ptr++;
+            return copy;
+        }
+        base_iterator& operator--() {
+            ptr--;
+            return *this;
+        }
+        base_iterator operator--(int) {
+            base_iterator copy = *this;
+            ptr--;
+            return copy;
+        }
     };
+public:
+    using iterator = base_iterator<false>;
+    using const_iterator = base_iterator<true>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     Vector(): arr_(nullptr), sz_(0), cap_(0) {}
     ~Vector() {
@@ -93,13 +115,28 @@ public:
     }
 
     iterator begin() {
-        //
+        return {arr_};
+    }
+
+    const_iterator begin() const {
+        return {arr_};
     }
 
     iterator end() {
-
+        return {arr_ + sz_};
     }
 
+    const_iterator end() const {
+        return {arr_ + sz_};
+    }
+
+    const_iterator cbegin() const {
+        return {arr_};
+    }
+
+    const_iterator cend() const {
+        return {arr_ + sz_};
+    }
 };
 
 template <>
@@ -109,3 +146,5 @@ private:
 public:
 
 };
+
+#endif
